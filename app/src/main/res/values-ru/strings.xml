@@ -208,4 +208,24 @@
 
     <string name="perf_reload">Перестроение сетки: %1$d мс</string>
     <string name="perf_wallpaper">Декодирование обоев: %1$d мс</string>
+    <!-- Экран «Образы» -->
+    <string name="looks_title">Каким будет главный экран</string>
+    <string name="look_cinema">Кино</string>
+    <string name="look_quiet">Тишина</string>
+    <string name="look_everything">Всё под рукой</string>
+    <string name="look_applied">Включён вид «%1$s»</string>
+    <string name="looks_clock">Часы: %1$s</string>
+    <string name="looks_motion">Плавность: %1$s</string>
+    <string name="motion_calm">спокойно</string>
+    <string name="motion_smooth">плавно</string>
+    <string name="motion_live">живо</string>
+    <string name="looks_fine_tune">Тонкая настройка</string>
+    <string name="looks_fine_tune_chip">Тонкая настройка ›</string>
+    <string name="looks_tv_chip">Настройки ТВ ›</string>
+    <string name="looks_wallpaper_rotation">Обои: ротация</string>
+    <string name="looks_wallpaper_none">Обои: выключены</string>
+    <string name="looks_wallpaper_picture">Обои: картинка %1$d</string>
+    <string name="looks_clock_auto">авто</string>
+    <string name="looks_clock_24">24 ч</string>
+    <string name="looks_clock_12">12 ч</string>
 </resources>

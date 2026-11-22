@@ -44,6 +44,8 @@ final class Config {
     static final String WALLPAPER_CHOICE_KEY = "wallpaper_choice";
     static final String DOCK_OPACITY_KEY = "dock_opacity";
     static final String CLOCK_FORMAT_KEY = "clock_format";
+    /** The scene home picked on the TV (Looks screen); it overrides config.xml and the theme's scene_home. */
+    static final String SCENE_HOME_KEY = "scene_home";
     /**
      * Counts the changes made in Launcher settings. Home remembers the count it was built with and rebuilds on
      * resume when it differs, however the settings were left (see MainActivity#onResume).
@@ -669,6 +671,14 @@ final class Config {
             glassStyle = string(json, "glass_style", glassStyle);
             sceneHome = bool(json, "scene_home", sceneHome);
         }
+        // A top-bar app is moved there, not copied: it leaves the grid.
+        for (String pkg : topBarApps) if (!hidden.contains(pkg)) hidden.add(pkg);
+        // A theme push or reset invalidates choices made on the TV. On first use, remember the
+        // current theme without clearing choices from an older launcher version.
+        SharedPreferences choices = ctx.getSharedPreferences(SETTINGS_NAME, Context.MODE_PRIVATE);
+        // Unmounted storage looks like a theme reset; compare only once the file is readable.
+        if (mounted) syncThemeChoices(choices, dir, file);
+        sceneHome = choices.getBoolean(SCENE_HOME_KEY, sceneHome);
         // The scene home is one switch for a whole look: it decides these options whatever the lines above read,
         // so a theme or an old config can't leave the screen half in it.
         if (sceneHome) {
@@ -688,13 +698,6 @@ final class Config {
             iconOnlyButtons = false;
             glassStyle = GLASS_RIM;
         }
-        // A top-bar app is moved there, not copied: it leaves the grid.
-        for (String pkg : topBarApps) if (!hidden.contains(pkg)) hidden.add(pkg);
-        // A theme push or reset invalidates choices made on the TV. On first use, remember the
-        // current theme without clearing choices from an older launcher version.
-        SharedPreferences choices = ctx.getSharedPreferences(SETTINGS_NAME, Context.MODE_PRIVATE);
-        // Unmounted storage looks like a theme reset; compare only once the file is readable.
-        if (mounted) syncThemeChoices(choices, dir, file);
         int chosenColumns = choices.getInt("columns", columns);
         if (chosenColumns >= 4 && chosenColumns <= 7) columns = chosenColumns;
         int chosenRows = choices.getInt(ROWS_BELOW_DOCK_KEY, rowsBelow);
@@ -795,12 +798,12 @@ final class Config {
             SharedPreferences.Editor editor = choices.edit();
             if (!"absent".equals(token)) editor.remove("columns").remove("animations")
                     .remove("advanced_effects").remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY)
-                    .remove(DOCK_OPACITY_KEY).remove(CLOCK_FORMAT_KEY);
+                    .remove(DOCK_OPACITY_KEY).remove(CLOCK_FORMAT_KEY).remove(SCENE_HOME_KEY);
             editor.putString(THEME_SIGNATURE_KEY, signature).commit();
         } else if (!seen.equals(signature)) {
             choices.edit().remove("columns").remove("animations").remove("advanced_effects")
                     .remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY).remove(DOCK_OPACITY_KEY)
-                    .remove(CLOCK_FORMAT_KEY).putString(THEME_SIGNATURE_KEY, signature).commit();
+                    .remove(CLOCK_FORMAT_KEY).remove(SCENE_HOME_KEY).putString(THEME_SIGNATURE_KEY, signature).commit();
         }
     }
 

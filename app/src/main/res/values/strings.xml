@@ -211,4 +211,24 @@
 
     <string name="perf_reload">Tile rebuild: %1$d ms</string>
     <string name="perf_wallpaper">Wallpaper decode: %1$d ms</string>
+    <!-- Looks screen -->
+    <string name="looks_title">How should Home look?</string>
+    <string name="look_cinema">Cinema</string>
+    <string name="look_quiet">Quiet</string>
+    <string name="look_everything">Everything at hand</string>
+    <string name="look_applied">%1$s look is on</string>
+    <string name="looks_clock">Clock: %1$s</string>
+    <string name="looks_motion">Motion: %1$s</string>
+    <string name="motion_calm">calm</string>
+    <string name="motion_smooth">smooth</string>
+    <string name="motion_live">lively</string>
+    <string name="looks_fine_tune">Fine-tuning</string>
+    <string name="looks_fine_tune_chip">Fine-tuning ›</string>
+    <string name="looks_tv_chip">TV ›</string>
+    <string name="looks_wallpaper_rotation">Wallpaper: rotating</string>
+    <string name="looks_wallpaper_none">Wallpaper: off</string>
+    <string name="looks_wallpaper_picture">Wallpaper: picture %1$d</string>
+    <string name="looks_clock_auto">auto</string>
+    <string name="looks_clock_24">24 h</string>
+    <string name="looks_clock_12">12 h</string>
 </resources>

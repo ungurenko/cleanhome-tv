@@ -41,7 +41,7 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     static final String EXTRA_REORDER = "com.gathin.tvhome.extra.REORDER_FROM_SETTINGS";
-    private static final int[] PREVIEW_COLORS = {
+    static final int[] PREVIEW_COLORS = {
             0xFFFFB04A, 0xFFFF5C5C, 0xFF4B8DFF, 0xFFA78BFA, 0xFF38E0C4};
     private SharedPreferences choices;
     private final TextView[] columnChoices = new TextView[4];
@@ -113,6 +113,8 @@ public final class LauncherSettingsActivity extends Activity {
                 refresh();
             });
         }
+        // The scene home has no dock band (Config.load), so its opacity would change nothing there.
+        if (config.sceneHome) ((View) findViewById(R.id.dock100).getParent().getParent()).setVisibility(View.GONE);
         int[] dockIds = {R.id.dock100, R.id.dock70, R.id.dock50, R.id.dock30};
         for (int i = 0; i < dockIds.length; i++) {
             final int value = DOCK_OPACITIES[i];
@@ -184,7 +186,8 @@ public final class LauncherSettingsActivity extends Activity {
             if (!hasOnTvChoices()) return;
             choices.edit().remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations")
                     .remove("advanced_effects").remove(Config.WALLPAPER_CHOICE_KEY)
-                    .remove(Config.DOCK_OPACITY_KEY).remove(Config.CLOCK_FORMAT_KEY).remove(OpenOnStart.KEY).commit();
+                    .remove(Config.DOCK_OPACITY_KEY).remove(Config.CLOCK_FORMAT_KEY).remove(OpenOnStart.KEY)
+                    .remove(Config.SCENE_HOME_KEY).commit();
             Config current = Config.load(this);
             columns = current.columns;
             rowsBelowDock = current.rowsBelowDock;
@@ -310,7 +313,7 @@ public final class LauncherSettingsActivity extends Activity {
         advancedChoice.setSelected(advancedEffects);
         advancedRow.setEnabled(animations);
         advancedRow.setAlpha(animations ? 1f : 0.55f);
-        wallpaperChoice.setText(wallpaperState());
+        wallpaperChoice.setText(wallpaperState(this, choices));
         boolean needsLocation = getPackageManager().checkPermission(
                 android.Manifest.permission.ACCESS_FINE_LOCATION, getPackageName())
                 != PackageManager.PERMISSION_GRANTED;
@@ -324,21 +327,21 @@ public final class LauncherSettingsActivity extends Activity {
     }
 
     /** "Wallpaper: picture 3 of 10", "all pictures, rotating" or "off", for the settings row. */
-    private CharSequence wallpaperState() {
+    static CharSequence wallpaperState(android.content.Context ctx, SharedPreferences choices) {
         String current = choices.getString(Config.WALLPAPER_CHOICE_KEY, null);
-        if (current == null) return getString(R.string.wallpaper_state_rotation);
-        if ("none".equals(current)) return getString(R.string.wallpaper_state_none);
-        File dir = Config.dir(this);
+        if (current == null) return ctx.getString(R.string.wallpaper_state_rotation);
+        if ("none".equals(current)) return ctx.getString(R.string.wallpaper_state_none);
+        File dir = Config.dir(ctx);
         List<File> images = dir == null ? new ArrayList<>()
                 : new ArrayList<>(WallpaperRotation.images(new File(dir, "wallpapers")));
         int index = indexOf(images, current) + 1;
-        return index <= 0 ? getString(R.string.wallpaper_state, current)
-                : getString(R.string.wallpaper_state_picture, index, images.size());
+        return index <= 0 ? ctx.getString(R.string.wallpaper_state, current)
+                : ctx.getString(R.string.wallpaper_state_picture, index, images.size());
     }
 
     /** The picture Home shows now: the chosen file, or the first one while they rotate. */
-    private File currentWallpaperFile() {
-        File dir = Config.dir(this);
+    static File currentWallpaperFile(android.content.Context ctx, SharedPreferences choices) {
+        File dir = Config.dir(ctx);
         if (dir == null) return null;
         List<File> images = WallpaperRotation.images(new File(dir, "wallpapers"));
         String current = choices.getString(Config.WALLPAPER_CHOICE_KEY, null);
@@ -352,7 +355,7 @@ public final class LauncherSettingsActivity extends Activity {
         return single.isFile() ? single : null;
     }
 
-    private static Bitmap decode(File file, int targetWidth) {
+    static Bitmap decode(File file, int targetWidth) {
         if (file == null) return null;
         try {
             BitmapFactory.Options bounds = new BitmapFactory.Options();
@@ -370,7 +373,7 @@ public final class LauncherSettingsActivity extends Activity {
 
     /** The miniature Home: wallpaper, the dock with its panel opacity, and the grid rows under it. */
     private void refreshPreview() {
-        File file = currentWallpaperFile();
+        File file = currentWallpaperFile(this, choices);
         boolean changed = file == null ? previewFile != null : !file.equals(previewFile);
         if (changed || previewBitmap == null) {
             previewFile = file;
@@ -481,7 +484,8 @@ public final class LauncherSettingsActivity extends Activity {
         return choices.contains("columns") || choices.contains(Config.ROWS_BELOW_DOCK_KEY)
                 || choices.contains("animations") || choices.contains("advanced_effects")
                 || choices.contains(Config.WALLPAPER_CHOICE_KEY) || choices.contains(Config.DOCK_OPACITY_KEY)
-                || choices.contains(Config.CLOCK_FORMAT_KEY) || choices.contains(OpenOnStart.KEY);
+                || choices.contains(Config.CLOCK_FORMAT_KEY) || choices.contains(OpenOnStart.KEY)
+                || choices.contains(Config.SCENE_HOME_KEY);
     }
 
     private void open(Intent intent) {
