@@ -231,4 +231,15 @@
     <string name="looks_clock_auto">auto</string>
     <string name="looks_clock_24">24 h</string>
     <string name="looks_clock_12">12 h</string>
+    <!-- One-click updates -->
+    <string name="update_title">CleanHome %1$s is out</string>
+    <string name="update_body">A new version of the launcher is ready to install.</string>
+    <string name="update_now">Update</string>
+    <string name="update_later">Later</string>
+    <string name="update_downloading">Downloading the update…</string>
+    <string name="update_failed_download">Could not download the update. Check the internet connection and try again.</string>
+    <string name="update_failed_check">The downloaded file did not pass the check, so it was not installed.</string>
+    <string name="update_allow_install">Allow the launcher to install apps, then press Update again.</string>
+    <string name="settings_update_checks">Check for updates</string>
+    <string name="settings_update_install">Install version %1$s</string>
 </resources>

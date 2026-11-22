@@ -228,4 +228,15 @@
     <string name="looks_clock_auto">авто</string>
     <string name="looks_clock_24">24 ч</string>
     <string name="looks_clock_12">12 ч</string>
+    <!-- Обновление в один клик -->
+    <string name="update_title">Вышла CleanHome %1$s</string>
+    <string name="update_body">Новая версия лаунчера готова к установке.</string>
+    <string name="update_now">Обновить</string>
+    <string name="update_later">Позже</string>
+    <string name="update_downloading">Скачиваю обновление…</string>
+    <string name="update_failed_download">Не удалось скачать обновление. Проверьте интернет и попробуйте ещё раз.</string>
+    <string name="update_failed_check">Скачанный файл не прошёл проверку, установка отменена.</string>
+    <string name="update_allow_install">Разрешите лаунчеру устанавливать приложения и нажмите «Обновить» ещё раз.</string>
+    <string name="settings_update_checks">Проверять обновления</string>
+    <string name="settings_update_install">Установить версию %1$s</string>
 </resources>

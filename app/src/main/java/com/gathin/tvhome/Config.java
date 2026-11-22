@@ -46,6 +46,8 @@ final class Config {
     static final String CLOCK_FORMAT_KEY = "clock_format";
     /** The scene home picked on the TV (Looks screen); it overrides config.xml and the theme's scene_home. */
     static final String SCENE_HOME_KEY = "scene_home";
+    /** The update check switched off on the TV (Fine-tuning); on by default wherever update_repo is set. */
+    static final String UPDATE_CHECKS_KEY = "update_checks";
     /**
      * Counts the changes made in Launcher settings. Home remembers the count it was built with and rebuilds on
      * resume when it differs, however the settings were left (see MainActivity#onResume).
@@ -285,6 +287,10 @@ final class Config {
     final boolean dockBandAll;
     /** The "Scene" home screen (config.xml, scene_home): load() has already switched on the options it needs. */
     final boolean sceneHome;
+    /** One-click updates (Updater): the public GitHub repository "owner/name", or empty when this build has none. */
+    final String updateRepo;
+    /** The update check as chosen on the TV (Fine-tuning); Home checks only with a repository and this on. */
+    final boolean updateChecks;
 
     private Config(List<String> dockApps, boolean fillDock, List<String> hiddenApps, List<String> libraryApps, List<String> libraryExcludedApps, String liveTvPackage,
                    String liveTvAction, String liveTvInputId, Map<String, String> launchActions, Map<String, String> appLabels,
@@ -301,7 +307,8 @@ final class Config {
                    boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
                    Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean homeIgnoreChannelKeys, boolean powerOnHome, boolean homeLongPressHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean vpnPill, String locale, boolean powerOnHomeAlways, boolean inputsConnectedOnly, boolean inputsCecStateOnly,
                    int openOnStartNetworkWait, boolean openOnStartOnWake, boolean iconOnlyVpn, String clockFormat, boolean backOpensClock, boolean glowSnap,
-                   boolean settingsKeyClearTask, boolean sceneHome) {
+                   boolean settingsKeyClearTask, boolean sceneHome, String updateRepo,
+                   boolean updateChecks) {
         this.handleViewInputs = handleViewInputs;
         this.tileMenu = tileMenu;
         this.inputKeycodes = inputKeycodes;
@@ -421,6 +428,8 @@ final class Config {
         this.wallpaperCaptions = wallpaperCaptions;
         this.glassStyle = glassStyle(glassStyle);
         this.sceneHome = sceneHome;
+        this.updateRepo = updateRepo;
+        this.updateChecks = updateChecks;
     }
 
     /** A known glow_style, or radial (the default) for anything else. */
@@ -552,6 +561,7 @@ final class Config {
         boolean singleRow = res.getBoolean(R.bool.single_row);
         boolean dockBandAll = res.getBoolean(R.bool.dock_band_all);
         boolean sceneHome = res.getBoolean(R.bool.scene_home);
+        String updateRepo = res.getString(R.string.update_repo).trim();
         boolean applied = false;
 
         File dir = dir(ctx);
@@ -670,6 +680,7 @@ final class Config {
             glowStyle = string(json, "glow_style", glowStyle);
             glassStyle = string(json, "glass_style", glassStyle);
             sceneHome = bool(json, "scene_home", sceneHome);
+            updateRepo = string(json, "update_repo", updateRepo).trim();
         }
         // A top-bar app is moved there, not copied: it leaves the grid.
         for (String pkg : topBarApps) if (!hidden.contains(pkg)) hidden.add(pkg);
@@ -754,7 +765,9 @@ final class Config {
                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
                 dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly, inputsCecStateOnly,
                 Math.max(0, Math.min(600, openOnStartNetworkWait)), openOnStartOnWake, iconOnlyVpn, clockFormat, backOpensClock, glowSnap,
-                settingsKeyClearTask, sceneHome);
+                settingsKeyClearTask, sceneHome,
+                Updater.validRepo(updateRepo) && Updater.RELEASE_PACKAGE.equals(ctx.getPackageName()) ? updateRepo : "",
+                choices.getBoolean(UPDATE_CHECKS_KEY, true));
     }
 
     /**

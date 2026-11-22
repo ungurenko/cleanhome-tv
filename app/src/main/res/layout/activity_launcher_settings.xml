@@ -149,6 +149,23 @@
                         style="@style/SettingsSection"
                         android:text="@string/settings_section_system" />
 
+                    <!-- One-click updates: shown only where config.xml update_repo is set (Updater). -->
+                    <LinearLayout
+                        android:id="@+id/updateInstallRow"
+                        style="@style/SettingsCard"
+                        android:visibility="gone">
+                        <TextView android:id="@+id/updateInstallLabel" style="@style/SettingsLabel" />
+                        <TextView style="@style/SettingsChevron" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/updateChecksRow"
+                        style="@style/SettingsCard"
+                        android:visibility="gone">
+                        <TextView style="@style/SettingsLabel" android:text="@string/settings_update_checks" />
+                        <TextView android:id="@+id/updateChecksChoice" style="@style/SettingsSwitch" />
+                    </LinearLayout>
+
                     <LinearLayout
                         android:id="@+id/wifiNameRow"
                         style="@style/SettingsCard"

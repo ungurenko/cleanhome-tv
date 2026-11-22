@@ -329,6 +329,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private boolean tilesReady;
     private boolean settingsRecreationPending;
     private Dialog cardPrompt;
+    /** The one-click update offer (Updater); like cardPrompt, one dialog at a time and gone in onPause. */
+    private Dialog updatePrompt;
+    /** config.xml update_repo after the TV's choice: empty when the update check is off. */
+    private String updateRepo = "";
+    private final Runnable offerUpdate = this::offerUpdate;
     /** Set when a decision could not be saved: no more prompts until the next resume, instead of asking in a loop. */
     private boolean promptsPaused;
     /** Between onStop and onStart: Home was fully covered by an app, not just by the translucent quick panel. */
@@ -500,6 +505,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         settingsKeycodes = cfg.settingsKeycodes;
         settingsKeyPanel = cfg.settingsKeyPanel;
         settingsKeyClearTask = cfg.settingsKeyClearTask;
+        updateRepo = cfg.updateChecks ? cfg.updateRepo : "";
         COLUMNS = cfg.columns;
         animations = cfg.animations;
         advancedEffects = cfg.animations && cfg.advancedEffects;
@@ -1195,6 +1201,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             pillsShown = true;
         }
         handler.postDelayed(this::maybeShowGestureHint, 1200);
+        if (!updateRepo.isEmpty()) handler.postDelayed(offerUpdate, 3000);
         if (showStats) startStats();
         if (gameDay != null) gameDay.start();
         sky.update();
@@ -1386,6 +1393,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         heroArt.animate().cancel();
         handler.removeCallbacks(minuteTick);
         handler.removeCallbacks(openWhenOnline);
+        handler.removeCallbacks(offerUpdate);
         startPending = null;   // leaving Home before the network came back: the boot's app stays closed
         stopStats();
         if (gameDay != null) gameDay.stop();
@@ -1394,6 +1402,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         cancelPendingFocusScroll();
         // Nothing of ours stays on screen over another app; an undecided prompt simply returns next time.
         if (cardPrompt != null) cardPrompt.dismiss();
+        if (updatePrompt != null) updatePrompt.dismiss();
         if (appLibrary != null) appLibrary.close();
         if (openPopup != null) openPopup.dismiss();
     }
@@ -3749,7 +3758,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * (hold OK, the Menu key, a long click) stays closed meanwhile.
      */
     private boolean homeBusy() {
-        return reordering || openPopup != null || cardPrompt != null;
+        return reordering || openPopup != null || cardPrompt != null || updatePrompt != null;
     }
 
     /** Drop in: fade and unfold from the top edge, hanging under the anchor pill. */
@@ -4136,6 +4145,83 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         cardPrompt = dialog;
         dialog.show();
         keep.requestFocus();
+    }
+
+    /**
+     * Once a day (Updater.checkDue) asks GitHub for a newer release while online, then offers the one it knows.
+     * Runs a few seconds after Home comes back, so it never holds up the first frame.
+     */
+    private void offerUpdate() {
+        if (updateRepo.isEmpty() || !resumed) return;
+        if (Updater.checkDue(this) && online()) Updater.check(this, updateRepo, () -> {
+            if (resumed) showUpdatePrompt();
+        });
+        showUpdatePrompt();
+    }
+
+    private boolean online() {
+        ConnectivityManager cm = getSystemService(ConnectivityManager.class);
+        NetworkCapabilities caps = cm == null ? null : cm.getNetworkCapabilities(cm.getActiveNetwork());
+        return caps != null && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+    }
+
+    /**
+     * "CleanHome 4.8 is out" with Later and Update, over a laid out grid with window focus and nothing else open.
+     * Later (or Back) stops asking about this version; Update downloads, checks and opens the system installer.
+     */
+    private void showUpdatePrompt() {
+        if (!tilesReady || promptsPaused || !hasWindowFocus() || isFinishing() || homeBusy()) return;
+        final Updater.Offer offer = Updater.offer(this);
+        if (offer == null || Updater.skipped(this, offer)) return;
+
+        View panel = getLayoutInflater().inflate(R.layout.dialog_update_prompt, root, false);
+        if (getResources().getBoolean(R.bool.rtl_menu_bar)) panel.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        ((TextView) panel.findViewById(R.id.title)).setText(getString(R.string.update_title, offer.version()));
+        TextView body = panel.findViewById(R.id.body);
+        body.setText(offer.notes.isEmpty() ? getString(R.string.update_body) : offer.notes);
+        TextView later = panel.findViewById(R.id.btnLater);
+        TextView update = panel.findViewById(R.id.btnUpdate);
+
+        final Dialog dialog = new Dialog(this);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(panel);
+        dialog.setCanceledOnTouchOutside(false);
+        Window w = dialog.getWindow();
+        if (w != null) {
+            w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            w.setLayout((int) (440 * density), ViewGroup.LayoutParams.WRAP_CONTENT);
+            w.setDimAmount(0.6f);
+        }
+        later.setOnClickListener(v -> {
+            Updater.skip(this, offer);
+            dialog.dismiss();
+        });
+        dialog.setOnCancelListener(d -> Updater.skip(this, offer));
+        dialog.setOnDismissListener(d -> {
+            if (updatePrompt == dialog) updatePrompt = null;
+        });
+        update.setOnClickListener(v -> {
+            if (Updater.askInstallPermission(this)) return;   // the prompt stays; Update again once it is allowed
+            // From here Back would only hide a download that still ends in the installer: it stays put instead.
+            dialog.setCancelable(false);
+            body.setText(R.string.update_downloading);
+            later.setEnabled(false);
+            update.setEnabled(false);
+            Updater.download(this, offer, (apk, error) -> {
+                dialog.dismiss();
+                if (!resumed) return;   // left Home while it downloaded: the offer simply returns next time
+                if (apk != null) Updater.install(this, apk);
+                else Toast.makeText(this, error, Toast.LENGTH_LONG).show();
+            });
+        });
+        // Up and Down stay put, as in the card prompt.
+        View.OnKeyListener keys = (v, keyCode, event) -> event.getAction() == KeyEvent.ACTION_DOWN
+                && (keyCode == KeyEvent.KEYCODE_DPAD_UP || keyCode == KeyEvent.KEYCODE_DPAD_DOWN);
+        later.setOnKeyListener(keys);
+        update.setOnKeyListener(keys);
+        updatePrompt = dialog;
+        dialog.show();
+        update.requestFocus();
     }
 
     /** Writes the owner's decision and rebuilds the tiles; focus is left where it is. */

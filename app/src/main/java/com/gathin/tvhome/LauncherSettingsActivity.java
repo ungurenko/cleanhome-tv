@@ -70,6 +70,11 @@ public final class LauncherSettingsActivity extends Activity {
     private String clockFormat;
     private boolean animations;
     private boolean advancedEffects;
+    /** config.xml update_repo (Updater): the update rows show only when the build has one. */
+    private String updateRepo;
+    private boolean updateChecks;
+    private TextView updateChecksChoice;
+    private boolean downloading;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -210,9 +215,33 @@ public final class LauncherSettingsActivity extends Activity {
         findViewById(R.id.tvSettingsRow).setOnClickListener(v ->
                 open(SystemSettings.intent(this, Settings.ACTION_SETTINGS)));
         findViewById(R.id.doneButton).setOnClickListener(v -> finish());
+        updateRepo = config.updateRepo;
+        updateChecks = config.updateChecks;
+        updateChecksChoice = findViewById(R.id.updateChecksChoice);
+        findViewById(R.id.updateChecksRow).setOnClickListener(v -> {
+            updateChecks = !updateChecks;
+            choices.edit().putBoolean(Config.UPDATE_CHECKS_KEY, updateChecks).apply();
+            changed();
+            refresh();
+        });
+        findViewById(R.id.updateInstallRow).setOnClickListener(v -> installUpdate());
         refresh();
         if (config.launcherSettingsButton) reorderRow.requestFocus();
         else columnChoices[Math.max(0, Math.min(columns - 4, 3))].requestFocus();
+    }
+
+    /** The same download, check and system installer as Home's update prompt, started from here. */
+    private void installUpdate() {
+        Updater.Offer offer = Updater.offer(this);
+        if (offer == null || downloading || Updater.askInstallPermission(this)) return;
+        downloading = true;
+        Toast.makeText(this, R.string.update_downloading, Toast.LENGTH_SHORT).show();
+        Updater.download(this, offer, (apk, error) -> {
+            downloading = false;
+            if (isFinishing() || isDestroyed()) return;
+            if (apk != null) Updater.install(this, apk);
+            else Toast.makeText(this, error, Toast.LENGTH_LONG).show();
+        });
     }
 
     private void reverseRow(TextView[] views) {
@@ -318,6 +347,13 @@ public final class LauncherSettingsActivity extends Activity {
                 android.Manifest.permission.ACCESS_FINE_LOCATION, getPackageName())
                 != PackageManager.PERMISSION_GRANTED;
         findViewById(R.id.wifiNameRow).setVisibility(needsLocation ? View.VISIBLE : View.GONE);
+        findViewById(R.id.updateChecksRow).setVisibility(updateRepo.isEmpty() ? View.GONE : View.VISIBLE);
+        updateChecksChoice.setText(updateChecks ? R.string.on : R.string.off);
+        updateChecksChoice.setSelected(updateChecks);
+        Updater.Offer offer = updateRepo.isEmpty() ? null : Updater.offer(this);
+        findViewById(R.id.updateInstallRow).setVisibility(offer == null ? View.GONE : View.VISIBLE);
+        if (offer != null) ((TextView) findViewById(R.id.updateInstallLabel))
+                .setText(getString(R.string.settings_update_install, offer.version()));
         openOnStartValue.setText(openOnStartLabel());
         boolean onTvChoices = hasOnTvChoices();
         followThemeValue.setText(onTvChoices

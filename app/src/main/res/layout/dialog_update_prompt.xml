@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The one-click update offer: the new version, a few lines of its release notes, Later and Update.
+     Update is focused first; Back means Later. Same panel as dialog_card_prompt. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/glass_panel"
+    android:paddingStart="26dp"
+    android:paddingEnd="26dp"
+    android:paddingTop="22dp"
+    android:paddingBottom="20dp"
+    android:elevation="12dp">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="#FFFFFFFF"
+        android:textSize="22sp"
+        android:fontFamily="@string/font_medium"
+        android:letterSpacing="-0.01" />
+
+    <TextView
+        android:id="@+id/body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:maxLines="6"
+        android:ellipsize="end"
+        android:textColor="#D9FFFFFF"
+        android:textSize="15sp"
+        android:lineSpacingExtra="3sp"
+        android:fontFamily="@string/font_body" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <TextView
+            android:id="@+id/btnLater"
+            style="@style/TopButton"
+            android:text="@string/update_later"
+            android:nextFocusUp="@+id/btnLater"
+            android:nextFocusDown="@+id/btnLater"
+            android:nextFocusLeft="@+id/btnLater"
+            android:nextFocusRight="@+id/btnUpdate" />
+
+        <TextView
+            android:id="@+id/btnUpdate"
+            style="@style/TopButton"
+            android:text="@string/update_now"
+            android:nextFocusUp="@+id/btnUpdate"
+            android:nextFocusDown="@+id/btnUpdate"
+            android:nextFocusLeft="@+id/btnLater"
+            android:nextFocusRight="@+id/btnUpdate" />
+    </LinearLayout>
+</LinearLayout>
